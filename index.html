@@ -4,55 +4,164 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ASL Alphabet Recognizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  body { font-family: Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #222; }
-  h1 { margin-bottom: 4px; }
-  .sub { color: #666; margin-top: 0; }
-  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-  th { background: #f2f2f2; }
-  a { color: #0b5fff; }
-  .note { background: #fff8e1; padding: 12px; border-radius: 6px; }
+  :root {
+    --bg: #0d1b2a; --panel: #14283d; --line: #27435f;
+    --text: #eaf1f7; --muted: #9db2c6;
+    --dot: #ffd166; --cyan: #5fd0e6;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--text); background-color: var(--bg);
+    background-image: radial-gradient(circle, rgba(95,208,230,.14) 1px, transparent 1.6px);
+    background-size: 28px 28px;
+    font-family: "Instrument Sans", system-ui, "Segoe UI", Arial, sans-serif;
+    line-height: 1.65; font-size: 17px;
+  }
+  h1, h2, h3 { font-family: "Bricolage Grotesque", "Segoe UI", Arial, sans-serif; line-height: 1.15; margin: 0; }
+  a { color: var(--cyan); }
+  a:focus-visible, .btn:focus-visible { outline: 3px solid var(--dot); outline-offset: 3px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 22px; }
+  section { padding: 56px 0 0; }
+  h2 { font-size: 2rem; margin-bottom: 14px; }
+  p { max-width: 62ch; margin: 0 0 14px; }
+  .muted { color: var(--muted); }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; padding-top: 64px; }
+  .hero h1 { font-size: clamp(2.3rem, 6vw, 3.8rem); letter-spacing: -0.02em; }
+  .hero p { font-size: 1.15rem; color: var(--muted); margin-top: 18px; }
+  .btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+  .btn { display: inline-block; padding: 12px 22px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+  .btn.main { background: var(--dot); color: #1b1600; }
+  .btn.alt { border: 2px solid var(--cyan); color: var(--cyan); }
+  .hand { width: 100%; max-width: 340px; justify-self: center; }
+  .hand .bones { fill: none; stroke: var(--cyan); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+                 stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 1.8s ease-out .2s forwards; }
+  .hand .dots circle { fill: var(--dot); }
+  .hand .dots { opacity: 0; animation: show .6s ease-out 1.3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes show { to { opacity: 1; } }
+
+  /* Results */
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+  .row { display: grid; grid-template-columns: 210px 1fr; gap: 14px; align-items: center; margin: 12px 0; }
+  .track { background: #0b1623; border-radius: 6px; height: 34px; overflow: hidden; }
+  .fill { height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+          font-weight: 600; color: #08202a; background: var(--cyan); }
+  .fill.gold { background: var(--dot); color: #1b1600; }
+  .stats { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .stats b { display: block; font-family: "Bricolage Grotesque", sans-serif; font-size: 1.9rem; color: var(--dot); }
+  .stats span { color: var(--muted); font-size: .95rem; }
+
+  /* Steps */
+  ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  ol.steps li { counter-increment: s; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  ol.steps li::before { content: counter(s); display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+                        background: var(--dot); color: #1b1600; font-weight: 700; margin-bottom: 10px; }
+  ol.steps h3 { font-size: 1.15rem; margin-bottom: 6px; }
+  ol.steps p { margin: 0; color: var(--muted); font-size: .98rem; }
+
+  /* Letters */
+  .letters { display: flex; flex-wrap: wrap; gap: 8px; max-width: 640px; }
+  .letters span { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px;
+                  border: 1px solid var(--cyan); font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; }
+  .letters span.off { border-style: dashed; border-color: var(--line); color: var(--muted); }
+
+  /* Limits */
+  ul.limits { margin: 0; padding-left: 20px; max-width: 66ch; }
+  ul.limits li { margin-bottom: 10px; }
+  footer { margin-top: 64px; padding: 24px 0 44px; border-top: 1px solid var(--line); color: var(--muted); }
+
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; padding-top: 40px; }
+    .hand { max-width: 240px; order: -1; }
+    .row { grid-template-columns: 1fr; gap: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hand .bones { animation: none; stroke-dashoffset: 0; }
+    .hand .dots { animation: none; opacity: 1; }
+    html { scroll-behavior: auto; }
+  }
 </style>
 </head>
 <body>
-  <h1>ASL Alphabet Recognizer</h1>
-  <p class="sub">Real-time fingerspelling recognition in Python, tested on people it has never seen. Built at Knight Hacks 2026.</p>
+<div class="wrap">
 
-  <h2>Demo</h2>
-  <p><a href="https://youtu.be/woQE1RcvYq8">Watch the demo video</a></p>
+  <header class="hero">
+    <div>
+      <h1>Reads ASL letters from your webcam</h1>
+      <p>A Python program that finds your hand, reads the fingerspelled letter, and builds words. We tested it on people it had never seen.</p>
+      <div class="btns">
+        <a class="btn main" href="PASTE_YOUR_VIDEO_LINK_HERE">Watch the demo</a>
+        <a class="btn alt" href="https://github.com/sam-mdts/hackathonix">View the code</a>
+      </div>
+    </div>
+    <svg class="hand" viewBox="0 0 300 340" role="img" aria-label="Hand skeleton made of 21 tracked points">
+      <path class="bones" d="M150 310 L108 282 L75 248 L52 212 L36 180 M150 310 L112 196 L102 146 L97 110 L94 78 M150 310 L210 214 L226 176 L236 150 L244 126 M112 196 L146 184 L180 194 L210 214 M146 184 L146 130 L146 90 L146 54 M180 194 L188 146 L192 112 L196 82"/>
+      <g class="dots">
+        <circle cx="150" cy="310" r="7"/><circle cx="108" cy="282" r="6"/><circle cx="75" cy="248" r="6"/><circle cx="52" cy="212" r="6"/><circle cx="36" cy="180" r="6"/>
+        <circle cx="112" cy="196" r="6"/><circle cx="102" cy="146" r="6"/><circle cx="97" cy="110" r="6"/><circle cx="94" cy="78" r="6"/>
+        <circle cx="146" cy="184" r="6"/><circle cx="146" cy="130" r="6"/><circle cx="146" cy="90" r="6"/><circle cx="146" cy="54" r="6"/>
+        <circle cx="180" cy="194" r="6"/><circle cx="188" cy="146" r="6"/><circle cx="192" cy="112" r="6"/><circle cx="196" cy="82" r="6"/>
+        <circle cx="210" cy="214" r="6"/><circle cx="226" cy="176" r="6"/><circle cx="236" cy="150" r="6"/><circle cx="244" cy="126" r="6"/>
+      </g>
+    </svg>
+  </header>
 
-  <h2>What it does</h2>
-  <p>A desktop program reads your webcam, finds your hand, and turns the ASL letters you sign into text. Hold a letter for about half a second and it gets added to a word.</p>
+  <section id="results">
+    <h2>How accurate is it?</h2>
+    <p>A random split mixes every person's video frames together, so the model sees near copies of its test questions. Testing on a person it has never seen is the honest number.</p>
+    <div class="panel">
+      <div class="row"><div>Random split</div><div class="track"><div class="fill gold" style="width:100%">100.0%</div></div></div>
+      <div class="row"><div>Unseen person p01</div><div class="track"><div class="fill" style="width:56.9%">56.9%</div></div></div>
+      <div class="row"><div>Unseen person p02</div><div class="track"><div class="fill" style="width:63.9%">63.9%</div></div></div>
+      <div class="stats">
+        <div><b>60.4%</b><span>mean on unseen people</span></div>
+        <div><b>2</b><span>people tested</span></div>
+        <div><b>XX</b><span>frames per second</span></div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:14px">Early result from 2 people. The most common mix-ups so far: V read as U, T as S, O as C, F as B.</p>
+  </section>
 
-  <h2>How it works</h2>
-  <ol>
-    <li>MediaPipe finds 21 points on the hand.</li>
-    <li>The points are centered on the wrist and scaled by hand size.</li>
-    <li>A scikit-learn Random Forest guesses the letter.</li>
-    <li>A letter only counts after it is held steadily, which cuts down on flicker.</li>
-  </ol>
+  <section id="how">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><h3>Find the hand</h3><p>MediaPipe locates 21 points on your hand in each camera frame.</p></li>
+      <li><h3>Clean the numbers</h3><p>The points are centered on the wrist and scaled by hand size.</p></li>
+      <li><h3>Guess the letter</h3><p>A scikit-learn Random Forest picks the most likely letter.</p></li>
+      <li><h3>Hold to confirm</h3><p>A letter counts after about half a second, then joins the word.</p></li>
+    </ol>
+  </section>
 
-  <h2>Results</h2>
-  <p>We trained on some people and tested on others. The model is only scored on people it never saw during training.</p>
-  <table>
-    <tr><th>Test</th><th>Accuracy</th></tr>
-    <tr><td>Random split (frames from the same person mixed together)</td><td>100.0%</td></tr>
-    <tr><td>Unseen person p01</td><td>56.9%</td></tr>
-    <tr><td>Unseen person p02</td><td>63.9%</td></tr>
-    <tr><td><strong>Mean on unseen people (2 people)</strong></td><td><strong>60.4%</strong></td></tr>
-  </table>
-  <p>The random split looks perfect because neighboring video frames are nearly identical, so the model has effectively seen the test answers. Testing on a new person gives the honest number. Live speed: about 30 frames per second.</p>
+  <section id="letters">
+    <h2>Which letters</h2>
+    <p>24 letters are covered. J and Z are left out because they need motion.</p>
+    <div class="letters" aria-label="Supported letters A to Y except J; J and Z not supported">
+      <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span class="off">J</span><span>K</span><span>L</span>
+      <span>M</span><span>N</span><span>O</span><span>P</span><span>Q</span><span>R</span><span>S</span><span>T</span><span>U</span><span>V</span><span>W</span><span>X</span><span>Y</span><span class="off">Z</span>
+    </div>
+  </section>
 
-  <h2>Limits</h2>
-  <ul>
-    <li>This is an alphabet recognizer, not a sign language translator.</li>
-    <li>J and Z are not included because they involve motion.</li>
-    <li>Only 2 people were tested, so the numbers are a small early result and will change with more people. It has not been tested across a diverse group of people.</li>
-    <li>Only hand landmark numbers were saved. No photos or video of participants are stored.</li>
-  </ul>
+  <section id="limits">
+    <h2>What it can't do yet</h2>
+    <ul class="limits">
+      <li>It is an alphabet recognizer, not a sign language translator.</li>
+      <li>Only 2 people were tested, so these numbers are a small early result. We have not tested across a diverse group of people.</li>
+      <li>Everyone signed with the same hand, in similar camera conditions.</li>
+      <li>Only hand landmark numbers were saved. No photos or video of participants are stored.</li>
+    </ul>
+  </section>
 
-  <h2>Code</h2>
-  <p><a href="https://github.com/sam-mdts/hackathonix">github.com/sam-mdts/hackathonix</a></p>
+  <footer>
+    Built at Knight Hacks 2026. Code: <a href="https://github.com/sam-mdts/hackathonix">github.com/sam-mdts/hackathonix</a>
+  </footer>
+
+</div>
 </body>
 </html>
