@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASL Alphabet Recognizer</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #222; }
+  h1 { margin-bottom: 4px; }
+  .sub { color: #666; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background: #f2f2f2; }
+  a { color: #0b5fff; }
+  .note { background: #fff8e1; padding: 12px; border-radius: 6px; }
+</style>
+</head>
+<body>
+  <h1>ASL Alphabet Recognizer</h1>
+  <p class="sub">Real-time fingerspelling recognition in Python, tested on people it has never seen. Built at Knight Hacks 2026.</p>
+
+  <h2>Demo</h2>
+  <p><a href="https://youtu.be/woQE1RcvYq8">Watch the demo video</a></p>
+
+  <h2>What it does</h2>
+  <p>A desktop program reads your webcam, finds your hand, and turns the ASL letters you sign into text. Hold a letter for about half a second and it gets added to a word.</p>
+
+  <h2>How it works</h2>
+  <ol>
+    <li>MediaPipe finds 21 points on the hand.</li>
+    <li>The points are centered on the wrist and scaled by hand size.</li>
+    <li>A scikit-learn Random Forest guesses the letter.</li>
+    <li>A letter only counts after it is held steadily, which cuts down on flicker.</li>
+  </ol>
+
+  <h2>Results</h2>
+  <p>We trained on some people and tested on others. The model is only scored on people it never saw during training.</p>
+  <table>
+    <tr><th>Test</th><th>Accuracy</th></tr>
+    <tr><td>Random split (frames from the same person mixed together)</td><td>100.0%</td></tr>
+    <tr><td>Unseen person p01</td><td>56.9%</td></tr>
+    <tr><td>Unseen person p02</td><td>63.9%</td></tr>
+    <tr><td><strong>Mean on unseen people (2 people)</strong></td><td><strong>60.4%</strong></td></tr>
+  </table>
+  <p>The random split looks perfect because neighboring video frames are nearly identical, so the model has effectively seen the test answers. Testing on a new person gives the honest number. Live speed: about 30 frames per second.</p>
+
+  <h2>Limits</h2>
+  <ul>
+    <li>This is an alphabet recognizer, not a sign language translator.</li>
+    <li>J and Z are not included because they involve motion.</li>
+    <li>Only 2 people were tested, so the numbers are a small early result and will change with more people. It has not been tested across a diverse group of people.</li>
+    <li>Only hand landmark numbers were saved. No photos or video of participants are stored.</li>
+  </ul>
+
+  <h2>Code</h2>
+  <p><a href="https://github.com/sam-mdts/hackathonix">github.com/sam-mdts/hackathonix</a></p>
+</body>
+</html>
