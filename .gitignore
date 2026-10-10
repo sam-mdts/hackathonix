@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+data.csv
+all_data.csv
+parts/
+makhi_data.csv
